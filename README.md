@@ -1,187 +1,139 @@
-# HydraForge
+# HYDRA-FORAGE 2.5
 
-HydraForge is a Python-based re-implementation of core THC-Hydra functionality.
-It provides a familiar CLI, modular protocol design, and Hydra-style output — implemented in a single, easy-to-extend Python script.
+**Advanced Multi-Protocol Network Login Cracker**
 
----
 
-## Legal disclaimer
+<img width="613" height="296" alt="image" src="https://github.com/user-attachments/assets/9d04b14a-2780-4ffd-9f49-a1b004c8dea7" />
 
-HydraForge is intended for ethical penetration testing, red teaming, and educational research only.
 
-You must have explicit written permission from the system owner before running any brute-force or authentication testing. Unauthorized access attempts against systems you do not own or have permission to test are illegal and punishable by law.
 
-The author and contributors assume no liability for misuse of this tool.
+A modern, Hydra-compatible Python implementation for ethical security testing and automation.
 
----
+# Overview
 
-## Features
+HYDRA-FORAGE is a modular, multi-protocol brute-force framework implemented in Python.
+It aims to provide a Hydra-like CLI and output style, while being easy to read, extend, and run on systems with Python 3. It supports common protocols used in penetration testing workflows and provides a multi-threaded engine, real-time progress display, and result logging.
 
-* Hydra-style CLI and output format
-* Modular protocol support (implemented):
+# Supported protocols
 
-  * `ssh` (password authentication)
-  * `http-post-form` (HTTP form POST)
-  * `ftp` (FTP login)
-  * `smtp-auth` (SMTP AUTH)
-* Concurrency control (`-t` / `--threads`)
-* Optional HTTP form auto-detection (requires BeautifulSoup)
-* Save discovered credentials to an output file (CSV)
-* Verbose mode for logging failed attempts
-* Single-file script for easy distribution and extension
+* ssh (requires `paramiko`)
+* ftp (uses Python's `ftplib`)
+* http-basic / https-basic (requires `requests`)
+* http form-based (requires `requests`)
+* telnet (uses Python's `telnetlib`)
+* mysql (requires `pymysql`)
+* postgres (requires `psycopg2` / `psycopg2-binary`)
 
----
+# Features
 
-## Requirements
+* Hydra-style CLI and attack behavior
+* Multi-threaded worker pool for concurrent attempts
+* Real-time progress display (compact bar or verbose)
+* Automatic result saving to file
+* Modular handlers per protocol for easy extension
+* Dependency checks with clear install hints
+* Clean, color-coded terminal UI (can be run in quiet mode)
+
+# Requirements
 
 * Python 3.8 or newer
-* Recommended Python packages:
+* Optional Python packages (install only what you need for a given protocol):
 
-  * `aiohttp`
-  * `paramiko`
-  * `beautifulsoup4` (optional, only for `--auto-form`)
+  * `paramiko` (SSH)
+  * `requests` (HTTP/HTTPS)
+  * `pymysql` (MySQL)
+  * `psycopg2-binary` (PostgreSQL)
 
-Install dependencies with pip:
-
-```bash
-pip install aiohttp paramiko beautifulsoup4
-```
-
----
-
-## Installation
-
-1. Clone or download the repository.
-2. Place the main script (`hydraforge.py`) in your working directory.
-3. Ensure the script is executable:
+Install optional packages as needed:
 
 ```bash
-chmod +x hydraforge.py
+pip install paramiko requests pymysql psycopg2-binary
 ```
 
-4. Install the dependencies listed above.
+# Quickstart
 
----
-
-## Usage
-
-Basic syntax:
+1. Place `hydraforage.py` in your working directory and make it executable:
 
 ```bash
-python3 hydraforge.py -L <userlist> -P <passlist> -M <module> --target <target> [options]
+chmod +x hydraforage.py
 ```
 
-Short flags overview:
-
-* `-L, --userlist` : file with usernames (one per line)
-* `-l, --user` : single username
-* `-P, --passlist` : file with passwords (one per line) [required]
-* `-M, --module` : module to use (`ssh`, `http-post-form`, `ftp`, `smtp-auth`)
-* `--target` : target string (e.g. `ssh://10.0.0.5:22`, `http://example.com/login.php`)
-* `-t, --threads` : concurrent threads/requests (default: 10)
-* `-T, --timeout` : connection timeout in seconds (default: 15)
-* `-o, --output` : append valid credentials to output file (CSV)
-* `--auto-form` : auto-detect HTTP form fields (requires `beautifulsoup4`)
-* `--username-field` / `--password-field` : form field names for `http-post-form`
-* `--success-string` / `--failure-string` : custom success/failure indicators for HTTP
-* `--tls` : use STARTTLS for SMTP or force TLS when building HTTP URL
-* `--disable-ssl` : disable SSL verification for HTTP requests
-* `-v, --verbose` : verbose output (prints failed attempts)
-* `--yes` : skip interactive confirmation
-
----
-
-## Examples
-
-SSH brute-force (use only with permission):
+2. Basic usage examples:
 
 ```bash
-python3 hydraforge.py -L users.txt -P passwords.txt -M ssh --target ssh://10.0.0.5:22 -t 20 -o found.csv
+# Single username, password file, SSH
+./hydraforage.py -l root -P passwords.txt ssh://192.168.1.100
+
+# User file, single password, custom SSH port
+./hydraforage.py -L users.txt -p 'Password123' -s 2222 ssh://target.com
+
+# FTP with threads and output file
+./hydraforage.py -l admin -P rockyou.txt -t 32 -o results.txt ftp://10.0.0.1
 ```
 
-HTTP form brute-force (manual field names):
+# Command-line options
+
+Run `./hydraforage.py -h` to show the full help. Key options are summarized below:
+
+* `target` — positional: `service://host[:port]` (e.g. `ssh://10.0.0.1:2222`)
+* `-l, --login` — single username
+* `-L, --login-file` — file with usernames (one per line)
+* `-p, --pass` — single password
+* `-P, --pass-file` — file with passwords
+* `-x, --generate` — password generator placeholder (not implemented in v2.5)
+* `-s, --port` — override default port
+* `-m, --path` — HTTP path (default `/`)
+* `-t, --tasks` — number of parallel tasks/threads (default: 16)
+* `-w, --timeout` — timeout in seconds per attempt (default: 10)
+* `-W, --wait` — wait time between attempts in milliseconds (default: 0)
+* `-o, --output` — output file to save valid credentials (default: `hydra_forage.txt`)
+* `-v, --verbose` — verbose mode
+* `-q, --quiet` — quiet mode (less output)
+* `-f, --exit-on-first` — exit after first valid login found
+* `--list-services` — list all available services and their dependency status
+
+# Example session
 
 ```bash
-python3 hydraforge.py -l admin -P passwords.txt -M http-post-form --target http://example.com/login.php --username-field user --password-field pass -t 10
+./hydraforage.py -l admin -P passwords.txt -t 24 ssh://192.168.0.50
 ```
 
-HTTP form brute-force with auto-detection:
+Typical output behavior:
 
-```bash
-python3 hydraforge.py -L users.txt -P passwords.txt -M http-post-form --target http://example.com/login.php --auto-form -t 10
-```
+* Banner and attack configuration box (unless `--quiet`)
+* Connection test to the target
+* Progress bar or verbose stats while running
+* Successful credentials printed and saved to the output file
+* Final attack summary with total attempts, successes, rate and elapsed time
 
-FTP brute-force:
+# Files
 
-```bash
-python3 hydraforge.py -L users.txt -P passwords.txt -M ftp --target ftp://ftp.example.com:21 -t 15
-```
+* `hydraforage.py` — main script (this repository)
+* `hydra_forage.txt` — default output file where successful logins are appended (created on first success)
 
-SMTP AUTH brute-force (with STARTTLS):
+# Extending / Development
 
-```bash
-python3 hydraforge.py -L users.txt -P passwords.txt -M smtp-auth --target smtp://mail.example.com:587 --tls -t 10
-```
+`hydraforage.py` is designed to be modular:
 
----
+* Add new protocol handlers as functions similar to `ssh_login`, `ftp_login`, `http_form_login`, etc.
+* Add entries to the `SERVICES` dictionary mapping a service name to its handler and default port.
+* The `BruteForceEngine` handles queueing, threading, and stats collection—modify or replace it to change concurrency strategy (for example, use `concurrent.futures` or async approaches).
 
-## Output
+# Security and legal notice
 
-HydraForge prints Hydra-style lines for found credentials and (optionally) failed attempts in verbose mode. Example found line:
+This tool can be used to test authentication across network services. Use it only against systems you own or explicitely have permission to test. Unauthorized access, scanning, or brute forcing is illegal and unethical. The author/project is not responsible for misuse.
 
-```
-[22][ssh] host: 10.0.0.5    login: root    password: toor
-```
+# Contribution
 
-If an output file is provided with `-o`, discovered credentials are appended in CSV format like:
+Contributions, bug reports, and pull requests are welcome. When submitting changes:
 
-```
-module,host,port,username,password,reason
-ssh,10.0.0.5,22,root,toor,Authentication successful
-```
+* Keep protocol handlers isolated and well-documented.
+* Add new dependencies to the README with clear install instructions.
+* Include usage examples and tests where applicable.
 
----
+# Contact
 
-## Limitations and differences compared to THC-Hydra
+For questions or contributions, open an issue or submit a pull request on this repository.
 
-HydraForge reproduces core Hydra behavior but is not the official THC-Hydra binary. Key differences include:
 
-* Performance: THC-Hydra is written in C and is significantly faster. HydraForge is Python-based and generally slower.
-* Modules: THC-Hydra implements many more services. HydraForge includes a limited set by default.
-* Advanced features: resume, proxy/SOCKS, and numerous hydra-specific options are not implemented yet.
-* Reliability: THC-Hydra has many battle-tested protocol handlers. HydraForge handlers are simplified and may need tuning per target.
 
----
-
-## Extending and contributing
-
-HydraForge is designed to be easy to extend. Contributions are welcome.
-
-To contribute:
-
-1. Fork the repository.
-2. Create a branch for your feature or fix.
-3. Implement and test your changes.
-4. Submit a pull request with a clear description and test notes.
-
-Guidelines:
-
-* Keep changes focused and well-documented.
-* Add tests where appropriate.
-* Respect the legal disclaimer in any examples or documentation.
-
----
-
-## Roadmap ideas
-
-* Implement additional modules (MySQL, PostgreSQL, SMB, RDP, VNC, Telnet)
-* Add proxy and SOCKS support
-* Add resume functionality and job files
-* Implement rules-based password mangling (Hydra-style)
-* Improve speed via async libraries or Cython modules
-
----
-
-## License
-
-This project is provided under the MIT License. See the `LICENSE` file for details.
